@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deployment Risk Assessment System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .card h2 {
+            color: #2d3748;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .result-card.show {
+            display: block;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .risk-score {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .risk-meter {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .risk-meter::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 50%;
+            background: conic-gradient(
+                from 0deg,
+                #10b981 0deg,
+                #f59e0b 120deg,
+                #ef4444 240deg,
+                #dc2626 360deg
+            );
+        }
+
+        .risk-meter span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .risk-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .metric-card h4 {
+            color: #4a5568;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .metric-card .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-proceed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-monitor {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-rollback {
+            background: #fecaca;
+            color: #991b1b;
+        }
+
+        .status-block {
+            background: #f3e8ff;
+            color: #6b21a8;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .dashboard-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .stat-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 16px;
+            padding: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .tab {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            color: #6b7280;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .dashboard-stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Deployment Risk Assessment</h1>
+            <p>AI-powered deployment risk prediction and automated rollback system</p>
+        </div>
+
+        <div class="dashboard-stats">
+            <div class="stat-card">
+                <div class="stat-value">247</div>
+                <div class="stat-label">Total Deployments</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">23</div>
+                <div class="stat-label">High Risk Blocked</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">12</div>
+                <div class="stat-label">Auto Rollbacks</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">94.8%</div>
+                <div class="stat-label">Success Rate</div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('deploy')">Deploy</button>
+            <button class="tab" onclick="showTab('monitor')">Monitor</button>
+            <button class="tab" onclick="showTab('logs')">Logs</button>
+        </div>
+
+        <div id="deploy-tab" class="tab-content active">
+            <div class="main-content">
+                <div class="card">
+                    <h2>📋 Deployment Details</h2>
+                    <form id="deploymentForm">
+                        <div class="form-group">
+                            <label for="service_name">Service Name</label>
+                            <input type="text" id="service_name" name="service_name" placeholder="e.g., user-service" required>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="change_type">Change Type</label>
+                                <select id="change_type" name="change_type" required>
+                                    <option value="">Select type</option>
+                                    <option value="feature">Feature</option>
+                                    <option value="bugfix">Bug Fix</option>
+                                    <option value="hotfix">Hotfix</option>
+                                    <option value="refactor">Refactor</option>
+                                    <option value="config">Config</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="files_changed">Files Changed</label>
+                                <input type="number" id="files_changed" name="files_changed" min="1" placeholder="e.g., 15" required>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="test_coverage">Test Coverage (%)</label>
+                                <input type="number" id="test_coverage" name="test_coverage" min="0" max="100" placeholder="e.g., 85" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="deployment_time">Deployment Time</label>
+                                <select id="deployment_time" name="deployment_time" required>
+                                    <option value="">Select time</option>
+                                    <option value="morning">Morning (9-12 PM)</option>
+                                    <option value="afternoon">Afternoon (1-5 PM)</option>
+                                    <option value="evening">Evening (6-9 PM)</option>
+                                    <option value="night">Night (10 PM-8 AM)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="dependencies">Dependencies</label>
+                                <input type="number" id="dependencies" name="dependencies" min="0" placeholder="e.g., 5" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="previous_failures">Previous Failures</label>
+                                <input type="number" id="previous_failures" name="previous_failures" min="0" placeholder="e.g., 2" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn">🔍 Analyze Risk</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h2>📊 Risk Analysis</h2>
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <p>Analyzing deployment risk...</p>
+                    </div>
+                    
+                    <div id="risk-analysis" style="text-align: center; color: #6b7280; padding: 40px 0;">
+                        <div style="font-size: 3rem; margin-bottom: 10px;">🎯</div>
+                        <p>Fill out the deployment details to get risk analysis</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-card" id="result-card">
+                <div class="risk-score">
+                    <div class="risk-meter" id="risk-meter">
+                        <span id="risk-percentage">0%</span>
+                    </div>
+                    <h3 id="risk-decision">Safe to Deploy</h3>
+                    <span class="status-badge status-proceed" id="status-badge">Proceed</span>
+                </div>
+
+                <div class="risk-details">
+                    <div class="metric-card">
+                        <h4>Risk Score</h4>
+                        <div class="value" id="risk-score-value">0.0</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Expected Latency</h4>
+                        <div class="value" id="latency-value">--</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Error Rate</h4>
+                        <div class="value" id="error-rate-value">--</div>
+                    </div>
+                    <div class="metric-card">
+                        <h4>Anomaly Detection</h4>
+                        <div class="value" id="anomaly-value">--</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px; display: flex; gap: 15px;">
+                    <button class="btn" onclick="deployService()" style="flex: 1;">🚀 Deploy Now</button>
+                    <button class="btn" onclick="reset()" style="flex: 1; background: #6b7280;">🔄 Reset</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="monitor-tab" class="tab-content">
+            <div class="card">
+                <h2>📈 Real-time Monitoring</h2>
+                <p style="color: #6b7280; margin-bottom: 20px;">Monitor deployed services and track performance metrics</p>
+                <div style="text-align: center; padding: 40px 0; color: #6b7280;">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">📊</div>
+                    <p>Service monitoring dashboard coming soon...</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="logs-tab" class="tab-content">
+            <div class="card">
+                <h2>📋 Deployment Logs</h2>
+                <p style="color: #6b7280; margin-bottom: 20px;">View deployment history and rollback events</p>
+                <div style="text-align: center; padding: 40px 0; color: #6b7280;">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">📝</div>
+                    <p>Deployment logs viewer coming soon...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected tab content
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+
+        document.getElementById('deploymentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('risk-analysis').style.display = 'none';
+            
+            // Get form data
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            // Simulate API call
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            // Calculate mock risk score
+            const response = await fetch("/predict", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+            const riskScore = result.risk_score;
+            
+            // Update UI
+            updateRiskDisplay(riskScore, data);
+            
+            // Hide loading
+            document.getElementById('loading').style.display = 'none';
+            
+            // Show result
+            document.getElementById('result-card').classList.add('show');
+            document.getElementById('result-card').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        function calculateRiskScore(data) {
+            let risk = 0;
+            
+            // Files changed impact
+            const filesChanged = parseInt(data.files_changed);
+            if (filesChanged > 50) risk += 0.3;
+            else if (filesChanged > 20) risk += 0.2;
+            else if (filesChanged > 10) risk += 0.1;
+            
+            // Test coverage impact
+            const testCoverage = parseInt(data.test_coverage);
+            if (testCoverage < 60) risk += 0.3;
+            else if (testCoverage < 80) risk += 0.2;
+            
+            // Dependencies impact
+            const dependencies = parseInt(data.dependencies);
+            if (dependencies > 10) risk += 0.2;
+            else if (dependencies > 5) risk += 0.1;
+            
+            // Previous failures impact
+            risk += Math.min(parseInt(data.previous_failures) * 0.15, 0.4);
+            
+            // Change type impact
+            const changeTypeRisk = {
+                'hotfix': 0.4,
+                'feature': 0.2,
+                'bugfix': 0.1,
+                'refactor': 0.3,
+                'config': 0.1
+            };
+            risk += changeTypeRisk[data.change_type] || 0.2;
+            
+            // Deployment time impact
+            const timeRisk = {
+                'morning': 0.0,
+                'afternoon': 0.1,
+                'evening': 0.2,
+                'night': 0.3
+            };
+            risk += timeRisk[data.deployment_time] || 0.1;
+            
+            return Math.min(risk, 1.0);
+        }
+
+        function updateRiskDisplay(riskScore, data) {
+            const percentage = Math.round(riskScore * 100);
+            const meter = document.getElementById('risk-meter');
+            const riskPercentage = document.getElementById('risk-percentage');
+            const riskDecision = document.getElementById('risk-decision');
+            const statusBadge = document.getElementById('status-badge');
+            
+            // Update percentage
+            riskPercentage.textContent = percentage + '%';
+            
+            // Update meter color and decision
+            let decision, status, color;
+            if (riskScore > 0.8) {
+                decision = 'Block Deployment';
+                status = 'block';
+                color = 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)';
+            } else if (riskScore > 0.6) {
+                decision = 'Rollback Required';
+                status = 'rollback';
+                color = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+            } else if (riskScore > 0.4) {
+                decision = 'Monitor Closely';
+                status = 'monitor';
+                color = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+            } else {
+                decision = 'Safe to Deploy';
+                status = 'proceed';
+                color = 'linear-gradient(135deg, #10b981 0%, #047857 100%)';
+            }
+            
+            meter.style.background = color;
+            riskDecision.textContent = decision;
+            statusBadge.textContent = status.toUpperCase();
+            statusBadge.className = `status-badge status-${status}`;
+            
+            // Update metrics
+            document.getElementById('risk-score-value').textContent = riskScore.toFixed(3);
+            document.getElementById('latency-value').textContent = Math.round(200 + riskScore * 500) + 'ms';
+            document.getElementById('error-rate-value').textContent = (riskScore * 0.05).toFixed(3);
+            document.getElementById('anomaly-value').textContent = riskScore > 0.6 ? 'Detected' : 'Normal';
+            document.getElementById('risk-score-value').textContent = result.risk_score;
+            document.getElementById('latency-value').textContent = result.latency;
+            document.getElementById('error-rate-value').textContent = result.error_rate;
+            document.getElementById('anomaly-value').textContent = result.anomaly;
+        }
+
+        function deployService() {
+            alert('🚀 Deployment initiated! Monitor tab will show real-time metrics.');
+        }
+
+        function reset() {
+            document.getElementById('deploymentForm').reset();
+            document.getElementById('result-card').classList.remove('show');
+            document.getElementById('risk-analysis').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
